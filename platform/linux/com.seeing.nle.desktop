@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Seeing
+Comment=AI-Native Non-Linear Video Editor
+Exec=seeing
+Icon=seeing
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;
+MimeType=video/mp4;video/x-matroska;video/quicktime;video/x-msvideo;
+Keywords=video;editor;ai;timeline;
