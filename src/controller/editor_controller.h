@@ -15,6 +15,7 @@
 
 #include <QObject>
 #include <memory>
+#include <QNetworkAccessManager>
 
 #include "model/project_model.h"
 #include "ai/ai_engine_interface.h"
@@ -58,9 +59,16 @@ signals:
 private:
     /// Apply a JSON mutation command to the model.
     void applyMutationCommand(const QJsonObject& command);
+    
+    /// Handle Marlin-2B specific slash commands.
+    void handleMarlinCommand(const QString& prompt);
+
+    /// Analyze an asset asynchronously using Marlin-2B.
+    void analyzeAssetInBackground(const QString& assetId, const QString& filePath);
 
     ProjectModel&                       m_model;
     std::unique_ptr<AiEngineInterface>  m_aiEngine;
+    QNetworkAccessManager               m_netManager;
 };
 
 } // namespace Seeing

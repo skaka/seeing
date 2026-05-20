@@ -17,6 +17,7 @@
 #include "view/preview_panel.h"
 #include "view/timeline_panel.h"
 #include "view/chat_panel.h"
+#include "view/settings_dialog.h"
 
 #include <QMenuBar>
 #include <QStatusBar>
@@ -105,9 +106,10 @@ void MainWindow::setupMenuBar()
 
     // ── AI menu ─────────────────────────────────────────────────────────────
     auto* aiMenu = menuBar->addMenu("&AI");
-    aiMenu->addAction("Use &Dummy Engine", this,
-        [this]() { m_controller.setAiEngine("dummy"); });
-    // Future: add more engine options here
+    aiMenu->addAction("Configure &AI Copilot...", this, [this]() {
+        SettingsDialog dlg(m_controller, this);
+        dlg.exec();
+    }, QKeySequence(Qt::CTRL | Qt::Key_Comma));
 }
 
 void MainWindow::setupStatusBar()

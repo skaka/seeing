@@ -50,7 +50,7 @@ message(STATUS "─────────────────────�
 # The user must point CMAKE_PREFIX_PATH to the Qt6 installation directory,
 # e.g. "C:/Qt/6.7.0/msvc2019_64" or "/opt/Qt/6.7.0/gcc_64" or
 # "$HOME/Qt/6.7.0/macos".
-find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui Network)
 
 # Log Qt6 version
 message(STATUS "Qt6 version:  ${Qt6_VERSION}")
@@ -68,6 +68,8 @@ set(SOURCES
     # View
     src/view/main_window.cpp
     src/view/main_window.h
+    src/view/settings_dialog.cpp
+    src/view/settings_dialog.h
     src/view/media_panel.cpp
     src/view/media_panel.h
     src/view/preview_panel.cpp
@@ -87,6 +89,8 @@ set(SOURCES
     src/ai/ai_engine_interface.h
     src/ai/dummy_ai_engine.cpp
     src/ai/dummy_ai_engine.h
+    src/ai/http_ai_engine.cpp
+    src/ai/http_ai_engine.h
     src/ai/ai_engine_factory.cpp
     src/ai/ai_engine_factory.h
 
@@ -105,6 +109,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
     Qt6::Core
     Qt6::Gui
+    Qt6::Network
 )
 
 # ── Cross-Platform Compiler Warnings ─────────────────────────────────────────

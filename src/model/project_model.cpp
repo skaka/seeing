@@ -50,22 +50,24 @@ ClipInfo ClipInfo::fromJson(const QJsonObject& obj)
 QJsonObject AssetInfo::toJson() const
 {
     QJsonObject obj;
-    obj["id"]       = id;
-    obj["file_path"] = filePath;
-    obj["name"]     = name;
-    obj["duration"] = duration;
-    obj["type"]     = type;
+    obj["id"]          = id;
+    obj["file_path"]   = filePath;
+    obj["name"]        = name;
+    obj["duration"]    = duration;
+    obj["type"]        = type;
+    obj["description"] = description;
     return obj;
 }
 
 AssetInfo AssetInfo::fromJson(const QJsonObject& obj)
 {
     AssetInfo a;
-    a.id       = obj["id"].toString();
-    a.filePath = obj["file_path"].toString();
-    a.name     = obj["name"].toString();
-    a.duration = obj["duration"].toDouble();
-    a.type     = obj["type"].toString();
+    a.id          = obj["id"].toString();
+    a.filePath    = obj["file_path"].toString();
+    a.name        = obj["name"].toString();
+    a.duration    = obj["duration"].toDouble();
+    a.type        = obj["type"].toString();
+    a.description = obj["description"].toString();
     return a;
 }
 
@@ -153,6 +155,17 @@ void ProjectModel::removeAsset(const QString& assetId)
                        [&](const AssetInfo& a) { return a.id == assetId; }),
         m_assets.end());
     emitChange();
+}
+
+void ProjectModel::updateAssetDescription(const QString& assetId, const QString& description)
+{
+    for (auto& a : m_assets) {
+        if (a.id == assetId) {
+            a.description = description;
+            emitChange();
+            break;
+        }
+    }
 }
 
 QVector<AssetInfo> ProjectModel::assets() const { return m_assets; }

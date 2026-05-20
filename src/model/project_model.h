@@ -46,6 +46,7 @@ struct AssetInfo {
     QString   name;            ///< Display name
     double    duration = 0.0;  ///< Total duration in seconds
     QString   type;            ///< "video", "audio", "image"
+    QString   description;     ///< VLM Analysis description
 
     QJsonObject toJson() const;
     static AssetInfo fromJson(const QJsonObject& obj);
@@ -74,6 +75,7 @@ public:
     // ── Assets ──────────────────────────────────────────────────────────────
     void                   addAsset(const AssetInfo& asset);
     void                   removeAsset(const QString& assetId);
+    void                   updateAssetDescription(const QString& assetId, const QString& description);
     QVector<AssetInfo>     assets() const;
     AssetInfo              asset(const QString& assetId) const;
 

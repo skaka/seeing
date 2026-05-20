@@ -95,10 +95,21 @@ void MediaPanel::refreshAssetList()
         else if (asset.type == "image") icon = "🖼️";
         else                            icon = "📄";
 
-        m_assetList->addItem(
-            QString("%1  %2  (%3s)")
-                .arg(icon, asset.name)
-                .arg(asset.duration, 0, 'f', 1));
+        QString text = QString("%1  %2").arg(icon, asset.name);
+        if (asset.type != "image") {
+            text += QString("  (%1s)").arg(asset.duration, 0, 'f', 1);
+        }
+
+        auto* item = new QListWidgetItem(text, m_assetList);
+
+        // Tooltip displaying path and AI description
+        QString tooltip = QString("📄 Name: %1\n📁 Path: %2\n🏷️ Type: %3")
+            .arg(asset.name, asset.filePath, asset.type);
+
+        if (!asset.description.isEmpty()) {
+            tooltip += QString("\n\n🤖 AI Copilot Analysis:\n%1").arg(asset.description);
+        }
+        item->setToolTip(tooltip);
     }
 }
 

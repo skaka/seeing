@@ -5,6 +5,7 @@
 
 #include "ai_engine_factory.h"
 #include "dummy_ai_engine.h"
+#include "http_ai_engine.h"
 
 namespace Seeing {
 
@@ -15,11 +16,14 @@ AiEngineFactory::create(EngineType type, QObject* parent)
     case EngineType::Dummy:
         return std::make_unique<DummyAiEngine>(parent);
 
-    // Future engines:
-    // case EngineType::OpenAI:
-    //     return std::make_unique<OpenAiEngine>(parent);
-    // case EngineType::Ollama:
-    //     return std::make_unique<OllamaEngine>(parent);
+    case EngineType::OpenAI:
+        return std::make_unique<HttpAiEngine>(HttpAiEngine::Mode::OpenAI, parent);
+
+    case EngineType::Gemini:
+        return std::make_unique<HttpAiEngine>(HttpAiEngine::Mode::Gemini, parent);
+
+    case EngineType::Ollama:
+        return std::make_unique<HttpAiEngine>(HttpAiEngine::Mode::Ollama, parent);
 
     default:
         return std::make_unique<DummyAiEngine>(parent);
@@ -34,9 +38,14 @@ AiEngineFactory::create(const QString& name, QObject* parent)
     if (lower == "dummy" || lower == "mock" || lower == "mvp")
         return create(EngineType::Dummy, parent);
 
-    // Future:
-    // if (lower == "openai" || lower == "gpt")
-    //     return create(EngineType::OpenAI, parent);
+    if (lower == "openai" || lower == "gpt")
+        return create(EngineType::OpenAI, parent);
+
+    if (lower == "gemini")
+        return create(EngineType::Gemini, parent);
+
+    if (lower == "ollama")
+        return create(EngineType::Ollama, parent);
 
     // Default fallback
     return create(EngineType::Dummy, parent);

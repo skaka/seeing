@@ -20,13 +20,10 @@ class AiEngineFactory
 public:
     /// Supported engine identifiers.
     enum class EngineType {
-        Dummy,       ///< MVP mock engine
-        // Future:
-        // OpenAI,
-        // Gemini,
-        // Claude,
-        // Ollama,
-        // LlamaCpp,
+        Dummy,
+        OpenAI,
+        Gemini,
+        Ollama
     };
 
     /// Create an engine instance.
