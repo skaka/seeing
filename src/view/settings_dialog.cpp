@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QCoreApplication>
+#include <QFileDialog>
 
 namespace Seeing {
 
@@ -50,6 +51,18 @@ void SettingsDialog::setupUI()
     m_vlmStatusLabel = new QLabel("Checking local VLM weights status...", this);
     m_vlmStatusLabel->setStyleSheet("font-size: 11px; color: #858585; margin-left: 2px;");
 
+    m_vlmLocalPathLabel = new QLabel("Local Model Weights Path:", this);
+    m_vlmLocalPathEdit = new QLineEdit(this);
+    m_vlmLocalPathEdit->setPlaceholderText("/app/model_weights");
+    m_vlmLocalPathBrowseBtn = new QPushButton("Browse...", this);
+    m_vlmLocalPathBrowseBtn->setObjectName("secondaryBtn");
+    m_vlmLocalPathBrowseBtn->setFixedHeight(24);
+
+    auto* pathLayout = new QHBoxLayout();
+    pathLayout->setContentsMargins(0, 0, 0, 0);
+    pathLayout->addWidget(m_vlmLocalPathEdit);
+    pathLayout->addWidget(m_vlmLocalPathBrowseBtn);
+
     m_engineCombo = new QComboBox(this);
     m_engineCombo->addItem("Dummy AI (MVP Mock)", "dummy");
     m_engineCombo->addItem("OpenAI (GPT Cloud)", "openai");
@@ -57,9 +70,21 @@ void SettingsDialog::setupUI()
     m_engineCombo->addItem("Ollama (Local Models)", "ollama");
 
     selectorLayout->addRow("VLM Indexer AI (Media Analysis):", m_vlmCombo);
+    selectorLayout->addRow(m_vlmLocalPathLabel, pathLayout);
     selectorLayout->addRow("", m_vlmStatusLabel);
     selectorLayout->addRow("NLE Montage Manager (Chat Copilot):", m_engineCombo);
     mainLayout->addLayout(selectorLayout);
+
+    connect(m_vlmCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SettingsDialog::onVlmEngineChanged);
+
+    connect(m_vlmLocalPathBrowseBtn, &QPushButton::clicked, this, [this]() {
+        QString dir = QFileDialog::getExistingDirectory(this, "Select Local Model Weights Directory", m_vlmLocalPathEdit->text());
+        if (!dir.isEmpty()) {
+            m_vlmLocalPathEdit->setText(dir);
+            checkVlmStatus();
+        }
+    });
 
     // ── Stacked Widget for Panels ───────────────────────────────────────────
     m_stackedWidget = new QStackedWidget(this);
@@ -165,6 +190,8 @@ void SettingsDialog::loadSettings()
         m_vlmCombo->setCurrentIndex(vlmIndex);
     }
 
+    m_vlmLocalPathEdit->setText(settings.value("ai/vlm_local_path", "/app/model_weights").toString());
+
     QString engine = settings.value("ai/engine_type", "dummy").toString();
     int index = m_engineCombo->findData(engine);
     if (index != -1) {
@@ -183,7 +210,20 @@ void SettingsDialog::loadSettings()
 
     m_hfToken->setText(settings.value("ai/hf_token", "").toString());
 
-    checkVlmStatus();
+    onVlmEngineChanged(m_vlmCombo->currentIndex());
+}
+
+void SettingsDialog::onVlmEngineChanged(int index)
+{
+    Q_UNUSED(index);
+    bool isLocal = (m_vlmCombo->currentData().toString() == "marlin");
+    m_vlmLocalPathLabel->setVisible(isLocal);
+    m_vlmLocalPathEdit->setVisible(isLocal);
+    m_vlmLocalPathBrowseBtn->setVisible(isLocal);
+    m_vlmStatusLabel->setVisible(isLocal);
+    if (isLocal) {
+        checkVlmStatus();
+    }
 }
 
 void SettingsDialog::onEngineChanged(int index)
@@ -204,6 +244,7 @@ void SettingsDialog::onSave()
     QString selectedEngine = m_engineCombo->currentData().toString();
 
     settings.setValue("ai/vlm_engine_type", selectedVlm);
+    settings.setValue("ai/vlm_local_path", m_vlmLocalPathEdit->text().trimmed());
     settings.setValue("ai/engine_type", selectedEngine);
 
     settings.setValue("ai/openai_key", m_openaiKey->text().trimmed());

@@ -26,8 +26,27 @@ class FindRequest(BaseModel):
     video_path: str
     query: str
 
+def get_config_path():
+    home = os.path.expanduser("~")
+    paths = [
+        # Inside docker container (if run as root)
+        "/root/.config/SeeingTeam/Seeing.conf",
+        # Native Linux
+        os.path.join(home, ".config/SeeingTeam/Seeing.conf"),
+        # Native macOS
+        os.path.join(home, "Library/Preferences/com.SeeingTeam.Seeing.plist"),
+        os.path.join(home, "Library/Preferences/SeeingTeam/Seeing.conf"),
+        # Native Windows
+        os.path.join(os.environ.get("APPDATA", ""), "SeeingTeam/Seeing.ini"),
+        os.path.join(os.environ.get("APPDATA", ""), "SeeingTeam/Seeing.conf"),
+    ]
+    for p in paths:
+        if p and os.path.exists(p):
+            return p
+    return "/root/.config/SeeingTeam/Seeing.conf"
+
 def get_setting_value(key_name, default=""):
-    config_path = "/root/.config/SeeingTeam/Seeing.conf"
+    config_path = get_config_path()
     if not os.path.exists(config_path):
         return default
     try:
@@ -44,8 +63,8 @@ def get_setting_value(key_name, default=""):
     return default
 
 def check_local_model_exists():
-    model_path = "/app/model_weights"
-    if not os.path.exists(model_path):
+    model_path = get_setting_value("vlm_local_path", "/app/model_weights")
+    if not model_path or not os.path.exists(model_path):
         return False
     try:
         files = os.listdir(model_path)
@@ -64,16 +83,17 @@ def load_local_model_if_needed():
         return
         
     if not check_local_model_exists():
-        model_error = "Local model weights not found at /app/model_weights. Please switch VLM engine to OpenAI/Gemini or place model weights locally."
+        model_path = get_setting_value("vlm_local_path", "/app/model_weights")
+        model_error = f"Local model weights not found at {model_path}. Please switch VLM engine or select a valid local folder."
         print(f"Marlin VLM Server: {model_error}")
         return
 
     try:
-        print("Marlin VLM Server: Loading Qwen2-VL-2B local model...")
+        model_path = get_setting_value("vlm_local_path", "/app/model_weights")
+        print(f"Marlin VLM Server: Loading local model from {model_path}...")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         
-        model_path = "/app/model_weights"
         model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=dtype,
@@ -82,7 +102,7 @@ def load_local_model_if_needed():
         processor = AutoProcessor.from_pretrained(model_path)
         model_loaded = True
         model_error = None
-        print(f"Qwen2-VL-2B loaded successfully on {device} from {model_path}!")
+        print(f"Model loaded successfully on {device} from {model_path}!")
     except Exception as e:
         model_error = str(e)
         print(f"Error loading model: {e}", file=sys.stderr)
@@ -92,13 +112,14 @@ def ensure_local_model_loaded():
     if model_loaded:
         return True
     if not check_local_model_exists():
-        model_error = "Local model weights not found at /app/model_weights. Please configure OpenAI/Gemini or add weights locally."
+        model_path = get_setting_value("vlm_local_path", "/app/model_weights")
+        model_error = f"Local model weights not found at {model_path}. Please configure OpenAI/Gemini or select a valid folder."
         return False
     try:
-        print("Marlin VLM Server: Loading Qwen2-VL-2B local model on demand...")
+        model_path = get_setting_value("vlm_local_path", "/app/model_weights")
+        print(f"Marlin VLM Server: Loading local model on demand from {model_path}...")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-        model_path = "/app/model_weights"
         model = Qwen2VLForConditionalGeneration.from_pretrained(model_path, torch_dtype=dtype, device_map=device)
         processor = AutoProcessor.from_pretrained(model_path)
         model_loaded = True

@@ -25,6 +25,7 @@ public:
     ~SettingsDialog() override = default;
 
 private slots:
+    void onVlmEngineChanged(int index);
     void onEngineChanged(int index);
     void onSave();
     void onTestConnection();
@@ -40,6 +41,11 @@ private:
     QComboBox* m_vlmCombo = nullptr;
     QComboBox* m_engineCombo = nullptr;
     QStackedWidget* m_stackedWidget = nullptr;
+
+    // VLM Path Controls
+    QLabel* m_vlmLocalPathLabel = nullptr;
+    QLineEdit* m_vlmLocalPathEdit = nullptr;
+    QPushButton* m_vlmLocalPathBrowseBtn = nullptr;
 
     // OpenAI Panel Controls
     QLineEdit* m_openaiKey = nullptr;

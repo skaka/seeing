@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QStyleFactory>
+#include <QSettings>
 
 #include "model/project_model.h"
 #include "controller/editor_controller.h"
@@ -20,6 +21,7 @@ int main(int argc, char* argv[])
     app.setApplicationName("Seeing");
     app.setApplicationVersion("0.1.0");
     app.setOrganizationName("SeeingTeam");
+    QSettings::setDefaultFormat(QSettings::IniFormat);
 
     // ── Dark Fusion palette (VS Code-inspired) ─────────────────────────────
     app.setStyle(QStyleFactory::create("Fusion"));
