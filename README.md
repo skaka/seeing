@@ -1,38 +1,31 @@
 # Seeing AI — Intelligent Non-Linear Video Editor (NLE)
 
-<div dir="rtl">
+> **VS Code-inspired, JSON-driven, AI-powered NLE built with C++20 & Qt6.**
+> **Fully containerized & cross-platform: Windows · Linux · macOS**
 
-**برنامج Seeing AI هو برنامج مونتاج وتعديل فيديو خطي (NLE) يعتمد بالكامل على تقنيات الذكاء الاصطناعي الثنائية (Dual-AI Architecture)، ومبني باستخدام لغة C++20 ومكتبة الرسوميات Qt6 ليعمل على مختلف أنظمة التشغيل بكفاءة عالية.**
-
-تم تصميم البرنامج كبيئة تحرير ذكية متكاملة مستوحاة من واجهات VS Code، بحيث تدعم أتمتة عمليات المونتاج بالكامل إما محلياً (Offline) لحماية خصوصية البيانات أو سحابياً (Cloud) للأداء السريع.
-
-</div>
+Seeing AI is an advanced, modern non-linear video editor that integrates a **Dual-AI Architecture** directly into the editing workflow. It enables both fully local offline processing (to protect privacy and run without GPU/internet gates) and high-fidelity cloud-based AI workflows for media indexing and automated editing.
 
 ---
 
-## ── Dual-AI Architecture / هيكلية الذكاء الاصطناعي الثنائي
+## ── Dual-AI Architecture
 
-<div dir="rtl">
+Seeing AI operates on two distinct, independent AI layers, configurable separately via the settings window (`Ctrl + ,`):
 
-يعتمد البرنامج على نموذجين مختلفين للذكاء الاصطناعي يعملان بشكل متكامل:
+### 1. Media Indexing VLM (Visual Language Model)
+Responsible for reading and detailing video, image, and audio files upon import:
+* **Local Offline (Qwen2-VL-2B)**: Performs CPU/GPU inference entirely inside the container workspace. It checks for local weight existence at `/app/model_weights` and strictly blocks any automatic Hugging Face downloads to avoid unexpected bandwidth usage.
+* **Cloud API (OpenAI GPT-4o / Gemini 2.5 Flash)**: Extracts keyframes dynamically from video streams inside the container, encodes them to base64, and sends them to cloud endpoints for high-speed captioning.
+* **Interactive Explorer Tooltips**: Generated captions and descriptions are automatically bound to assets and displayed as rich hover tooltips in the Asset Explorer.
 
-### 1. ذكاء فهرسة وتحليل الوسائط (VLM Indexer AI)
-مسؤول عن قراءة وتحليل الصور والفيديوهات والصوت بمجرد استيرادها إلى المشروع:
-* **محلي بالكامل (Offline - Qwen2-VL)**: يقوم بتحليل الوسائط محلياً داخل حاوية Docker دون الحاجة لأي اتصال بالإنترنت أو استهلاك للبيانات، مع حظر كامل لأي تحميل تلقائي من خوادم Hugging Face لضمان الحفاظ على موارد النظام.
-* **سحابي بالكامل (API-based - OpenAI / Gemini)**: يقوم باستخراج كادرات مرئية ذكية من الفيديوهات وإرسالها مشفرة عبر واجهة برمجة التطبيقات لتوصيف المحتوى بشكل فائق الجودة والسرعة.
-* **تلميحات تفاعلية (Tooltips)**: يعرض البرنامج وصف التحليل الذكي للقطات كبطاقات تلميحات هوامشية تفاعلية بمجرد تمرير الفأرة فوق الوسائط في لوحة الاستكشاف (Explorer).
-
-### 2. ذكاء إدارة عمليات التحرير والمونتاج (NLE Montage Manager)
-مساعد المونتاج الذكي الذي يستقبل الأوامر الصوتية أو النصية من لوحة الدردشة:
-* **مونتاج تلقائي بالكامل (Automated Montage)**: يقوم بتحليل قائمة الوسائط المستوردة ووصفها البصري، ثم يولد مخططاً زمنياً متسلسلاً ويقوم بتركيب الكليبات خلف بعضها بدقة تلقائياً عبر ميزة الأوامر المتسلسلة (`sequence` actions).
-* **تنفيذ الأوامر الذكية**: يدعم قص وتعديل وتحريك وحذف الكليبات وتطبيق عمليات الـ Undo والـ Redo بشكل آلي أو يدوي.
-* **خيارات متعددة**: يدعم كلاً من نماذج OpenAI، ونماذج Gemini، ونماذج Ollama المحلية (مثل Llama3)، بالإضافة لنموذج محاكاة تجريبي (Dummy AI).
-
-</div>
+### 2. NLE Montage Manager & Chat Copilot
+Responsible for executing timeline manipulations and automated video editing from the chat panel:
+* **Automated Montage (Sequence Action)**: Translates high-level prompts into a series of timed track edits (`sequence` actions) that are applied recursively to compile imported assets into finished timelines automatically.
+* **Interactive Editing Commands**: Supports manual command overrides like adding, trimming, moving, or removing clips, along with native undo/redo.
+* **Flexible Backends**: Supports OpenAI (GPT Cloud), Gemini, Ollama (Local LLM like Llama3/Qwen), or a Mock Engine (Dummy AI).
 
 ---
 
-## ── Architecture / هندسة النظام
+## ── System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -65,78 +58,66 @@
 
 ---
 
-## ── Docker Container Configuration / تشغيل البرنامج عبر الحاويات
+## ── Running with Docker / Podman
 
-<div dir="rtl">
-
-يتم تشغيل البرنامج بالكامل داخل بيئة حاوية معزولة (Docker/Podman) لمنع أي تعارض في المكتبات ولتأمين تشغيل سلس لجميع معالجات بايثون ونماذج الذكاء الاصطناعي:
-
-* يتم ربط بطاقة الرسوميات (GPU) محلياً لضمان تسريع الذكاء الاصطناعي.
-* يتم مشاركة المجلدات التفضيلية ومجلد الوسائط لتسجيل المشاريع مباشرة في حاسوبك المضيف.
-
-### خطوات التشغيل السريعة:
-</div>
+Seeing AI is fully dockerized to manage C++ dependencies, Qt libraries, X11/Wayland display forwarding, and Python model servers in a rootless, unified workspace:
 
 ```bash
 # 1. Build the container image
 ./build.sh
 
-# 2. Run the program (starts Marlin server & logs GUI forwarding)
+# 2. Run the application
 ./run.sh
 ```
 
 ---
 
-## ── Configuration & Local Weights / الإعدادات وأوزان النماذج المحلية
+## ── Local Model Weights Verification
 
-<div dir="rtl">
-
-عند النقر على الاختصار `Ctrl + ,` أو من خلال قائمة `AI` -> `Configure AI Copilot`:
-1. ستظهر لك قائمة الاختيارات الخاصة بكل نموذج (تحليل الوسائط، والدردشة التحريرية).
-2. في الجزء السفلي من خانة اختيار الـ VLM، ستجد مؤشراً ذكياً باللون الأخضر أو الأحمر يوضح ما إذا كانت أوزان نموذج Qwen2-VL متوفرة محلياً داخل الحاوية في المسار `/app/model_weights` أم لا، مما يعطيك تحكماً كاملاً لربط النموذج بالإنترنت أو إبقائه أوفلاين.
-
-</div>
+Under `AI` -> `Configure AI Copilot...` (`Ctrl + ,`):
+* Select your preferred **VLM Indexer AI** and **NLE Montage Manager**.
+* Under the VLM combo box, a real-time status label checks and reports whether local Qwen2-VL weights are successfully mapped at `/app/model_weights` (`🟢 detected` or `🔴 not found`), indicating if you can run local offline captioning or should configure cloud keys.
 
 ---
 
-## ── AI Assistant Test Commands / أوامر تجربة مساعد المونتاج
+## ── AI Montage Chat Commands
 
-Type these inside the **AI Copilot Chat Panel** on the right:
+Type these in the chat panel to instruct the co-pilot:
 
-| Category | Arabic Command | English Command | Effect / التأثير |
-|:---|:---|:---|:---|
-| **Auto Montage** | `اعمل مونتاج تلقائي لكل الفيديوهات والصور بترتيب زمني` | `Make a dynamic montage using all imported assets` | **يرتب جميع الوسائط خلف بعضها في التايملاين تلقائياً** |
-| **Add Clip** | `أضف كليب باسم البداية من 0 إلى 5 ثوان على التراك 0` | `add clip Intro on track 0 from 0s to 5s` | يضيف كليباً بالاسم والزمن المحدد |
-| **Trim Clip** | `احذف أول 3 ثوان من التايملاين` | `cut the first 3 seconds` | يقص الزمن المحدد من أول كليب |
-| **Move Clip** | `انقل كليب البداية إلى الثانية 10` | `move clip Intro to 10s` | ينقل كليب محدد إلى نقطة زمنية جديدة |
-| **General** | `تراجع` / `أعد تنفيذ` | `undo` / `redo` | عمليات التراجع وإعادة التنفيذ على التايملاين |
+| Category | Command | Effect |
+|:---|:---|:---|
+| **Auto Montage** | `Make a dynamic montage using all imported assets` | **Sequentially adds and aligns all media on the timeline** |
+| **Add Clip** | `add clip Intro on track 0 from 0s to 5s` | Adds a clip at the designated coordinates |
+| **Trim Clip** | `cut the first 3 seconds` | Trims duration off the beginning of the earliest clip |
+| **Move Clip** | `move clip Intro to 10s` | Shifts clip position to the 10-second mark |
+| **History** | `undo` / `redo` | Reverts or repeats timeline modifications |
 
 ---
 
-## ── Codebase Layout / هيكلية الملفات البرمجية
+## ── Directory Layout
 
 ```
 seeing/
-├── CMakeLists.txt                  # CMake build definition (C++20, Qt6)
-├── Dockerfile                      # Standardized rootless container build
+├── CMakeLists.txt                  # C++20/Qt6 build system configuration
+├── Dockerfile                      # Standardized containerized runtime build
 ├── build.sh                        # Automation compilation script
 ├── run.sh                          # GUI display-forwarding run script
 ├── src/
-│   ├── main.cpp                    # Entry point, theme configuration, MVC setup
+│   ├── main.cpp                    # Application entry point & Dark theme stylesheet
 │   ├── model/
-│   │   ├── project_model.h/cpp     # JSON-based NLE project state tracker
+│   │   ├── project_model.h/cpp     # In-memory JSON state representation of NLE timeline
 │   ├── view/
-│   │   ├── main_window.h/cpp       # 4-panel split visual window layout
-│   │   ├── media_panel.h/cpp       # Media asset manager and interactive explorer
-│   │   ├── settings_dialog.h/cpp   # Dual-AI (VLM & LLM) engine selector dialog
-│   │   ├── timeline_panel.h/cpp    # Multitrack interactive timeline visualization
-│   │   └── chat_panel.h/cpp        # NLE assistant chat dialog interface
+│   │   ├── main_window.h/cpp       # Quadrant layout configuration
+│   │   ├── media_panel.h/cpp       # Explorer panel with AI description tooltips
+│   │   ├── settings_dialog.h/cpp   # Dual-AI configuration & health check dialog
+│   │   ├── timeline_panel.h/cpp    # Interactive multitrack timeline graphics
+│   │   └── chat_panel.h/cpp        # Co-pilot conversational panel
 │   ├── controller/
-│   │   └── editor_controller.h/cpp # Routes and triggers AI commands & JSON mutations
+│   │   └── editor_controller.h/cpp # Routes and triggers AI mutations & sequence execution
 │   └── ai/
-│       ├── http_ai_engine.h/cpp    # Cloud provider adapter (OpenAI, Gemini, Ollama)
-│       ├── marlin_server.py        # Dynamic routing python gateway for local/cloud VLMs
-│       └── ai_engine_factory.h/cpp # Factory creator pattern for co-pilot engines
+│       ├── http_ai_engine.h/cpp    # Conversational LLM API client wrapper
+│       ├── marlin_server.py        # Gateway routing local Qwen2-VL weights or cloud APIs
+│       └── ai_engine_factory.h/cpp # LLM instantiation factory
 ```
 
 ## License
