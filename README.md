@@ -1,9 +1,38 @@
-# Seeing — AI-Native Non-Linear Video Editor
+# Seeing AI — Intelligent Non-Linear Video Editor (NLE)
 
-> **VS Code-inspired, JSON-driven, AI-powered NLE built with C++20 & Qt6.**
-> **Fully cross-platform: Windows · Linux · macOS (x86_64 & ARM64/Apple Silicon)**
+<div dir="rtl">
 
-## Architecture
+**برنامج Seeing AI هو برنامج مونتاج وتعديل فيديو خطي (NLE) يعتمد بالكامل على تقنيات الذكاء الاصطناعي الثنائية (Dual-AI Architecture)، ومبني باستخدام لغة C++20 ومكتبة الرسوميات Qt6 ليعمل على مختلف أنظمة التشغيل بكفاءة عالية.**
+
+تم تصميم البرنامج كبيئة تحرير ذكية متكاملة مستوحاة من واجهات VS Code، بحيث تدعم أتمتة عمليات المونتاج بالكامل إما محلياً (Offline) لحماية خصوصية البيانات أو سحابياً (Cloud) للأداء السريع.
+
+</div>
+
+---
+
+## ── Dual-AI Architecture / هيكلية الذكاء الاصطناعي الثنائي
+
+<div dir="rtl">
+
+يعتمد البرنامج على نموذجين مختلفين للذكاء الاصطناعي يعملان بشكل متكامل:
+
+### 1. ذكاء فهرسة وتحليل الوسائط (VLM Indexer AI)
+مسؤول عن قراءة وتحليل الصور والفيديوهات والصوت بمجرد استيرادها إلى المشروع:
+* **محلي بالكامل (Offline - Qwen2-VL)**: يقوم بتحليل الوسائط محلياً داخل حاوية Docker دون الحاجة لأي اتصال بالإنترنت أو استهلاك للبيانات، مع حظر كامل لأي تحميل تلقائي من خوادم Hugging Face لضمان الحفاظ على موارد النظام.
+* **سحابي بالكامل (API-based - OpenAI / Gemini)**: يقوم باستخراج كادرات مرئية ذكية من الفيديوهات وإرسالها مشفرة عبر واجهة برمجة التطبيقات لتوصيف المحتوى بشكل فائق الجودة والسرعة.
+* **تلميحات تفاعلية (Tooltips)**: يعرض البرنامج وصف التحليل الذكي للقطات كبطاقات تلميحات هوامشية تفاعلية بمجرد تمرير الفأرة فوق الوسائط في لوحة الاستكشاف (Explorer).
+
+### 2. ذكاء إدارة عمليات التحرير والمونتاج (NLE Montage Manager)
+مساعد المونتاج الذكي الذي يستقبل الأوامر الصوتية أو النصية من لوحة الدردشة:
+* **مونتاج تلقائي بالكامل (Automated Montage)**: يقوم بتحليل قائمة الوسائط المستوردة ووصفها البصري، ثم يولد مخططاً زمنياً متسلسلاً ويقوم بتركيب الكليبات خلف بعضها بدقة تلقائياً عبر ميزة الأوامر المتسلسلة (`sequence` actions).
+* **تنفيذ الأوامر الذكية**: يدعم قص وتعديل وتحريك وحذف الكليبات وتطبيق عمليات الـ Undo والـ Redo بشكل آلي أو يدوي.
+* **خيارات متعددة**: يدعم كلاً من نماذج OpenAI، ونماذج Gemini، ونماذج Ollama المحلية (مثل Llama3)، بالإضافة لنموذج محاكاة تجريبي (Dummy AI).
+
+</div>
+
+---
+
+## ── Architecture / هندسة النظام
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -14,6 +43,7 @@
 │  │          ├──────────────────────────┤                      │ │
 │  │  (Left)  │    Timeline Panel        │    (Right)           │ │
 │  │          │  QGraphicsScene/View     │                      │ │
+│  │  Explorer│  Multitrack Timeline     │  Dual AI Assistant   │ │
 │  └──────────┴──────────────────────────┴──────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -33,163 +63,82 @@
                       └────────────────────────┘
 ```
 
-## Cross-Platform Support
+---
 
-| Platform | Architecture | Compiler | Status |
-|----------|-------------|----------|--------|
-| Windows 10/11 | x86_64, ARM64 | MSVC 2019+, MinGW | ✅ |
-| macOS 11+ | x86_64, Apple Silicon (M1/M2/M3) | AppleClang | ✅ |
-| Linux (Ubuntu/Fedora/Arch) | x86_64, ARM64 | GCC 11+, Clang 14+ | ✅ |
+## ── Docker Container Configuration / تشغيل البرنامج عبر الحاويات
 
-### Design Principles for Portability
-- **Zero OS-specific headers** — No `<windows.h>`, no POSIX-only code
-- **Cross-platform fonts** — Fallback chains: Inter → SF Pro Display → Segoe UI → Noto Sans
-- **CMake-only build system** — No platform-specific build scripts in the pipeline
-- **Qt6 abstraction** — All system calls go through Qt's cross-platform API
+<div dir="rtl">
 
-## Prerequisites
+يتم تشغيل البرنامج بالكامل داخل بيئة حاوية معزولة (Docker/Podman) لمنع أي تعارض في المكتبات ولتأمين تشغيل سلس لجميع معالجات بايثون ونماذج الذكاء الاصطناعي:
 
-- **CMake** ≥ 3.20
-- **Qt6** (Widgets module)
-- **C++20 compiler**
+* يتم ربط بطاقة الرسوميات (GPU) محلياً لضمان تسريع الذكاء الاصطناعي.
+* يتم مشاركة المجلدات التفضيلية ومجلد الوسائط لتسجيل المشاريع مباشرة في حاسوبك المضيف.
 
-### Install by Platform
-
-<details>
-<summary><b>Windows</b></summary>
-
-```powershell
-# Option 1: winget
-winget install Kitware.CMake
-# Install Visual Studio 2022 with "Desktop development with C++" workload
-# Download Qt6 from https://www.qt.io/download-qt-installer
-
-# Option 2: Use the setup script
-.\setup.ps1
-```
-</details>
-
-<details>
-<summary><b>macOS</b></summary>
+### خطوات التشغيل السريعة:
+</div>
 
 ```bash
-# Homebrew
-xcode-select --install        # Apple Clang
-brew install cmake qt@6
+# 1. Build the container image
+./build.sh
 
-# Or use the setup script
-chmod +x setup.sh && ./setup.sh
-```
-</details>
-
-<details>
-<summary><b>Linux (Ubuntu/Debian)</b></summary>
-
-```bash
-sudo apt update
-sudo apt install cmake build-essential qt6-base-dev
-
-# Or use the setup script
-chmod +x setup.sh && ./setup.sh
-```
-</details>
-
-<details>
-<summary><b>Linux (Fedora)</b></summary>
-
-```bash
-sudo dnf install cmake gcc-c++ qt6-qtbase-devel
-
-chmod +x setup.sh && ./setup.sh
-```
-</details>
-
-## Build & Run
-
-```bash
-# 1. Configure (set your Qt path)
-cmake -B build -S . -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/<kit>"
-
-# 2. Build (auto-detects thread count)
-cmake --build build --config Release
-
-# 3. Run
-# Windows:  .\build\Release\Seeing.exe
-# macOS:    open build/Seeing.app
-# Linux:    ./build/Seeing
+# 2. Run the program (starts Marlin server & logs GUI forwarding)
+./run.sh
 ```
 
-### macOS Universal Binary (x86_64 + Apple Silicon)
-```bash
-cmake -B build -S . \
-    -DCMAKE_PREFIX_PATH="$HOME/Qt/6.7.0/macos" \
-    -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-cmake --build build --config Release
-```
+---
 
-### Quick Start with Qt Creator
-1. Open `CMakeLists.txt` in Qt Creator
-2. Select your Qt6 kit
-3. Build & Run (`Ctrl+R` / `Cmd+R`)
+## ── Configuration & Local Weights / الإعدادات وأوزان النماذج المحلية
 
-## MVP Test Commands
+<div dir="rtl">
 
-Type these in the AI Copilot chat panel:
+عند النقر على الاختصار `Ctrl + ,` أو من خلال قائمة `AI` -> `Configure AI Copilot`:
+1. ستظهر لك قائمة الاختيارات الخاصة بكل نموذج (تحليل الوسائط، والدردشة التحريرية).
+2. في الجزء السفلي من خانة اختيار الـ VLM، ستجد مؤشراً ذكياً باللون الأخضر أو الأحمر يوضح ما إذا كانت أوزان نموذج Qwen2-VL متوفرة محلياً داخل الحاوية في المسار `/app/model_weights` أم لا، مما يعطيك تحكماً كاملاً لربط النموذج بالإنترنت أو إبقائه أوفلاين.
 
-| Command | Effect |
-|---------|--------|
-| `add demo` | Adds a 10s demo clip on Track 1 |
-| `add clip Intro on track 0 from 0s to 5s` | Adds a named clip |
-| `cut the first 3 seconds` | Trims 3s from the earliest clip |
-| `trim clip Demo to 7s` | Sets clip duration to 7s |
-| `move clip Demo to 5s` | Moves clip to 5s position |
-| `remove clip Demo` | Removes the clip |
-| `undo` | Undo last action |
-| `redo` | Redo last action |
-| `help` | Show all commands |
+</div>
 
-## Project Structure
+---
+
+## ── AI Assistant Test Commands / أوامر تجربة مساعد المونتاج
+
+Type these inside the **AI Copilot Chat Panel** on the right:
+
+| Category | Arabic Command | English Command | Effect / التأثير |
+|:---|:---|:---|:---|
+| **Auto Montage** | `اعمل مونتاج تلقائي لكل الفيديوهات والصور بترتيب زمني` | `Make a dynamic montage using all imported assets` | **يرتب جميع الوسائط خلف بعضها في التايملاين تلقائياً** |
+| **Add Clip** | `أضف كليب باسم البداية من 0 إلى 5 ثوان على التراك 0` | `add clip Intro on track 0 from 0s to 5s` | يضيف كليباً بالاسم والزمن المحدد |
+| **Trim Clip** | `احذف أول 3 ثوان من التايملاين` | `cut the first 3 seconds` | يقص الزمن المحدد من أول كليب |
+| **Move Clip** | `انقل كليب البداية إلى الثانية 10` | `move clip Intro to 10s` | ينقل كليب محدد إلى نقطة زمنية جديدة |
+| **General** | `تراجع` / `أعد تنفيذ` | `undo` / `redo` | عمليات التراجع وإعادة التنفيذ على التايملاين |
+
+---
+
+## ── Codebase Layout / هيكلية الملفات البرمجية
 
 ```
 seeing/
-├── CMakeLists.txt                  # Cross-platform build (Win/Linux/macOS, x64/ARM)
-├── README.md
-├── setup.ps1                       # Windows auto-setup script
-├── setup.sh                        # Linux/macOS auto-setup script
-├── platform/
-│   ├── macos/Info.plist.in         # macOS .app bundle template
-│   └── linux/com.seeing.nle.desktop # Linux .desktop entry
-├── resources/
-│   └── resources.qrc
-└── src/
-    ├── main.cpp                    # Entry point, dark theme, MVC wiring
-    ├── model/
-    │   ├── project_model.h         # Master JSON state (clips, assets, undo)
-    │   └── project_model.cpp
-    ├── view/
-    │   ├── main_window.h/cpp       # 4-panel VS Code layout
-    │   ├── media_panel.h/cpp       # Left: asset explorer
-    │   ├── preview_panel.h/cpp     # Center-top: video preview placeholder
-    │   ├── timeline_panel.h/cpp    # Center-bottom: QGraphicsScene timeline
-    │   ├── timeline_clip_item.h/cpp# Custom-painted clip rectangles
-    │   └── chat_panel.h/cpp        # Right: AI copilot chat
-    ├── controller/
-    │   ├── editor_controller.h     # Routes AI → Model mutations
-    │   └── editor_controller.cpp
-    └── ai/
-        ├── ai_engine_interface.h   # Abstract base for all AI backends
-        ├── dummy_ai_engine.h/cpp   # MVP mock (keyword parser)
-        ├── ai_engine_factory.h     # Factory pattern for engine creation
-        └── ai_engine_factory.cpp
+├── CMakeLists.txt                  # CMake build definition (C++20, Qt6)
+├── Dockerfile                      # Standardized rootless container build
+├── build.sh                        # Automation compilation script
+├── run.sh                          # GUI display-forwarding run script
+├── src/
+│   ├── main.cpp                    # Entry point, theme configuration, MVC setup
+│   ├── model/
+│   │   ├── project_model.h/cpp     # JSON-based NLE project state tracker
+│   ├── view/
+│   │   ├── main_window.h/cpp       # 4-panel split visual window layout
+│   │   ├── media_panel.h/cpp       # Media asset manager and interactive explorer
+│   │   ├── settings_dialog.h/cpp   # Dual-AI (VLM & LLM) engine selector dialog
+│   │   ├── timeline_panel.h/cpp    # Multitrack interactive timeline visualization
+│   │   └── chat_panel.h/cpp        # NLE assistant chat dialog interface
+│   ├── controller/
+│   │   └── editor_controller.h/cpp # Routes and triggers AI commands & JSON mutations
+│   └── ai/
+│       ├── http_ai_engine.h/cpp    # Cloud provider adapter (OpenAI, Gemini, Ollama)
+│       ├── marlin_server.py        # Dynamic routing python gateway for local/cloud VLMs
+│       └── ai_engine_factory.h/cpp # Factory creator pattern for co-pilot engines
 ```
-
-## Adding a New AI Engine
-
-1. Create a class inheriting `AiEngineInterface`
-2. Implement `processPrompt()` returning a JSON mutation object
-3. Register it in `AiEngineFactory`
-4. Done — the Controller automatically routes to it
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
