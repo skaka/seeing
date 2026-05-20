@@ -43,24 +43,37 @@ def get_setting_value(key_name, default=""):
         print(f"Error reading config key {key_name}: {e}")
     return default
 
+def check_local_model_exists():
+    model_path = "/app/model_weights"
+    if not os.path.exists(model_path):
+        return False
+    try:
+        files = os.listdir(model_path)
+        has_config = "config.json" in files
+        has_weights = any(f.endswith(".safetensors") or f.endswith(".bin") or f.startswith("model.safetensors") for f in files)
+        return has_config and has_weights
+    except Exception:
+        return False
+
 @app.on_event("startup")
 def load_local_model_if_needed():
     global model, processor, model_loaded, model_error
     vlm_type = get_setting_value("vlm_engine_type", "marlin")
     if vlm_type != "marlin":
-        print(f"Marlin VLM Server: VLM Engine is set to '{vlm_type}'. Local Qwen2-VL will be loaded on demand or bypassed.")
+        print(f"Marlin VLM Server: VLM Engine is set to '{vlm_type}'. Local Qwen2-VL will be bypassed.")
         return
         
+    if not check_local_model_exists():
+        model_error = "Local model weights not found at /app/model_weights. Please switch VLM engine to OpenAI/Gemini or place model weights locally."
+        print(f"Marlin VLM Server: {model_error}")
+        return
+
     try:
         print("Marlin VLM Server: Loading Qwen2-VL-2B local model...")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         
         model_path = "/app/model_weights"
-        if not os.path.exists(model_path):
-            print(f"Local weights not found at {model_path}, downloading/loading from Hugging Face hub...")
-            model_path = "Qwen/Qwen2-VL-2B-Instruct"
-
         model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=dtype,
@@ -78,13 +91,14 @@ def ensure_local_model_loaded():
     global model, processor, model_loaded, model_error
     if model_loaded:
         return True
+    if not check_local_model_exists():
+        model_error = "Local model weights not found at /app/model_weights. Please configure OpenAI/Gemini or add weights locally."
+        return False
     try:
         print("Marlin VLM Server: Loading Qwen2-VL-2B local model on demand...")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         model_path = "/app/model_weights"
-        if not os.path.exists(model_path):
-            model_path = "Qwen/Qwen2-VL-2B-Instruct"
         model = Qwen2VLForConditionalGeneration.from_pretrained(model_path, torch_dtype=dtype, device_map=device)
         processor = AutoProcessor.from_pretrained(model_path)
         model_loaded = True
@@ -205,15 +219,13 @@ def query_gemini_vlm(file_path, is_image, prompt_text):
 @app.get("/health")
 def health():
     vlm_type = get_setting_value("vlm_engine_type", "marlin")
-    if vlm_type != "marlin":
-        return {"status": "ready", "mode": vlm_type}
-        
-    if model_loaded:
-        return {"status": "ready", "mode": "local_marlin"}
-    elif model_error:
-        return {"status": "error", "message": model_error}
-    else:
-        return {"status": "loading"}
+    local_found = check_local_model_exists()
+    return {
+        "status": "ready",
+        "mode": vlm_type,
+        "local_model_found": local_found,
+        "local_model_path": "/app/model_weights"
+    }
 
 @app.post("/caption")
 def caption(req: CaptionRequest):

@@ -47,6 +47,9 @@ void SettingsDialog::setupUI()
     m_vlmCombo->addItem("Gemini 2.5 Flash (Cloud)", "gemini");
     m_vlmCombo->addItem("Mock VLM (Dummy)", "dummy");
 
+    m_vlmStatusLabel = new QLabel("Checking local VLM weights status...", this);
+    m_vlmStatusLabel->setStyleSheet("font-size: 11px; color: #858585; margin-left: 2px;");
+
     m_engineCombo = new QComboBox(this);
     m_engineCombo->addItem("Dummy AI (MVP Mock)", "dummy");
     m_engineCombo->addItem("OpenAI (GPT Cloud)", "openai");
@@ -54,6 +57,7 @@ void SettingsDialog::setupUI()
     m_engineCombo->addItem("Ollama (Local Models)", "ollama");
 
     selectorLayout->addRow("VLM Indexer AI (Media Analysis):", m_vlmCombo);
+    selectorLayout->addRow("", m_vlmStatusLabel);
     selectorLayout->addRow("NLE Montage Manager (Chat Copilot):", m_engineCombo);
     mainLayout->addLayout(selectorLayout);
 
@@ -178,6 +182,8 @@ void SettingsDialog::loadSettings()
     m_ollamaModel->setText(settings.value("ai/ollama_model", "llama3").toString());
 
     m_hfToken->setText(settings.value("ai/hf_token", "").toString());
+
+    checkVlmStatus();
 }
 
 void SettingsDialog::onEngineChanged(int index)
@@ -374,6 +380,37 @@ void SettingsDialog::applyTheme()
             background-color: #2d2d30;
         }
     )");
+}
+
+void SettingsDialog::checkVlmStatus()
+{
+    auto* manager = new QNetworkAccessManager(this);
+    QNetworkRequest request(QUrl("http://127.0.0.1:8012/health"));
+    QNetworkReply* reply = manager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, manager]() {
+        reply->deleteLater();
+        manager->deleteLater();
+
+        if (reply->error() != QNetworkReply::NoError) {
+            m_vlmStatusLabel->setText("⚠️ VLM Server offline (cannot verify local weights).");
+            m_vlmStatusLabel->setStyleSheet("font-size: 11px; color: #f48771;");
+            return;
+        }
+
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonObject obj = doc.object();
+        
+        bool found = obj["local_model_found"].toBool(false);
+        if (found) {
+            m_vlmStatusLabel->setText("🟢 Local model weights detected at /app/model_weights.");
+            m_vlmStatusLabel->setStyleSheet("font-size: 11px; color: #89d185;");
+        } else {
+            m_vlmStatusLabel->setText("🔴 Local model weights not found at /app/model_weights. Please configure OpenAI/Gemini APIs.");
+            m_vlmStatusLabel->setStyleSheet("font-size: 11px; color: #f48771;");
+        }
+    });
 }
 
 } // namespace Seeing

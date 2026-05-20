@@ -57,10 +57,13 @@ private:
     QLineEdit* m_hfToken = nullptr;
 
     // Test & Action buttons
+    QLabel* m_vlmStatusLabel = nullptr;
     QPushButton* m_testBtn = nullptr;
     QLabel* m_testStatus = nullptr;
     QPushButton* m_saveBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
+
+    void checkVlmStatus();
 };
 
 } // namespace Seeing
